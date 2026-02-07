@@ -35,22 +35,21 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // Projects/Businesses
+    // Projects/Businesses - CUSTOMIZE THESE
     const PROJECTS = [
-      { id: 'spendbase', name: 'Spendbase', emoji: '💳', color: 'emerald', status: 'active' },
-      { id: 'onchainbanks', name: 'OnchainBanks', emoji: '🏦', color: 'blue', status: 'active' },
-      { id: 'usdckey', name: 'USDCkey', emoji: '🔑', color: 'purple', status: 'active' },
-      { id: 'linkswarm', name: 'LinkSwarm', emoji: '🐝', color: 'amber', status: 'active' },
+      { id: 'project-alpha', name: 'Project Alpha', emoji: '🚀', color: 'emerald', status: 'active' },
+      { id: 'project-beta', name: 'Project Beta', emoji: '💎', color: 'blue', status: 'active' },
+      { id: 'project-gamma', name: 'Project Gamma', emoji: '⚡', color: 'purple', status: 'planned' },
     ];
     
-    // Smart routing rules
+    // Smart routing rules - customize keywords for your projects
     const ROUTING_RULES = {
-      'social': 'pulse', 'twitter': 'pulse', 'telegram': 'pulse', 'content': 'pulse', 'moltbook': 'pulse', 'x.com': 'pulse',
-      'seo': 'index', 'keyword': 'index', 'backlink': 'index', 'ranking': 'index', 'linkswarm': 'index', 'pseo': 'index',
-      'dev': 'forge', 'bug': 'forge', 'code': 'forge', 'deploy': 'forge', 'api': 'forge', 'dashboard': 'forge',
-      'video': 'reel', 'edit': 'reel', 'thumbnail': 'reel',
-      'outreach': 'bridge', 'partnership': 'bridge', 'email': 'bridge', 'meeting': 'bridge', 'influencer': 'bridge', 'virattt': 'bridge',
-      'trading': 'alpha', 'defi': 'alpha', 'swap': 'alpha', 'yield': 'alpha', 'solana': 'alpha',
+      'social': 'pulse', 'twitter': 'pulse', 'telegram': 'pulse', 'content': 'pulse', 'post': 'pulse',
+      'seo': 'index', 'keyword': 'index', 'backlink': 'index', 'ranking': 'index', 'blog': 'index',
+      'dev': 'forge', 'bug': 'forge', 'code': 'forge', 'deploy': 'forge', 'api': 'forge', 'build': 'forge',
+      'video': 'reel', 'edit': 'reel', 'thumbnail': 'reel', 'clip': 'reel',
+      'outreach': 'bridge', 'partnership': 'bridge', 'email': 'bridge', 'meeting': 'bridge', 'partner': 'bridge',
+      'trading': 'alpha', 'defi': 'alpha', 'swap': 'alpha', 'yield': 'alpha', 'market': 'alpha',
     };
 
     // Agent definitions
@@ -69,96 +68,73 @@
     const COLUMN_LABELS = { 'inbox': 'Inbox', 'assigned': 'Assigned', 'in-progress': 'In Progress', 'review': 'Review', 'done': 'Done' };
     const COLUMN_COLORS = { 'inbox': 'gray', 'assigned': 'yellow', 'in-progress': 'blue', 'review': 'purple', 'done': 'emerald' };
 
-    // Task data - Updated 2026-02-06
+    // Task data - EXAMPLE DATA (customize for your projects)
     const MOCK_TASKS = [
-      // DONE TODAY
-      { id: 1, title: 'Build LinkSwarm MVP', status: 'done', agent: 'henry', priority: 'high', tags: ['linkswarm', 'dev'] },
-      { id: 2, title: 'Add admin dashboard with auth', status: 'done', agent: 'forge', priority: 'high', tags: ['linkswarm', 'security'] },
-      { id: 3, title: 'Domain verification system (DNS/meta/file)', status: 'done', agent: 'henry', priority: 'high', tags: ['linkswarm', 'dev'] },
-      { id: 4, title: 'Register LinkSwarmBot on Moltbook', status: 'done', agent: 'pulse', priority: 'medium', tags: ['moltbook', 'social'] },
-      { id: 5, title: 'Add verification files to 3 sites', status: 'done', agent: 'henry', priority: 'medium', tags: ['linkswarm', 'deploy'] },
-      { id: 6, title: 'Fork virattt/ai-hedge-fund', status: 'done', agent: 'henry', priority: 'medium', tags: ['dev', 'research'] },
-      { id: 7, title: 'Create influencer outreach list', status: 'done', agent: 'bridge', priority: 'medium', tags: ['outreach', 'linkswarm'] },
-      { id: 8, title: 'Update pricing (generous free tier)', status: 'done', agent: 'henry', priority: 'medium', tags: ['linkswarm'] },
+      // DONE
+      { id: 1, title: 'Set up project repository', status: 'done', agent: 'henry', priority: 'high', tags: ['dev', 'setup'] },
+      { id: 2, title: 'Design landing page mockup', status: 'done', agent: 'forge', priority: 'high', tags: ['design', 'dev'] },
+      { id: 3, title: 'Write launch announcement', status: 'done', agent: 'pulse', priority: 'medium', tags: ['social', 'content'] },
       
       // IN PROGRESS
-      { id: 9, title: 'Claim LinkSwarmBot on Moltbook', status: 'in-progress', agent: 'pulse', priority: 'high', tags: ['moltbook', 'social'] },
-      { id: 10, title: 'Set up linkswarm.ai DNS', status: 'in-progress', agent: 'forge', priority: 'high', tags: ['linkswarm', 'deploy'] },
-      { id: 11, title: 'DM virattt about collaboration', status: 'assigned', agent: 'bridge', priority: 'high', tags: ['outreach', 'influencer'] },
+      { id: 4, title: 'Build MVP features', status: 'in-progress', agent: 'forge', priority: 'high', tags: ['dev'] },
+      { id: 5, title: 'Create social media accounts', status: 'in-progress', agent: 'pulse', priority: 'medium', tags: ['social'] },
+      { id: 6, title: 'Keyword research', status: 'in-progress', agent: 'index', priority: 'medium', tags: ['seo'] },
       
-      // BACKLOG - NEW
-      { id: 12, title: 'Create Stripe payment links', status: 'inbox', agent: null, priority: 'high', tags: ['linkswarm', 'payments'] },
-      { id: 13, title: 'Build Cloudflare Workers API', status: 'inbox', agent: null, priority: 'high', tags: ['linkswarm', 'api', 'dev'] },
-      { id: 14, title: 'Post LinkSwarm announcement on Moltbook', status: 'inbox', agent: null, priority: 'medium', tags: ['moltbook', 'social'] },
-      { id: 15, title: 'Submit to AI agent directories', status: 'inbox', agent: null, priority: 'medium', tags: ['linkswarm', 'distribution'] },
-      { id: 16, title: 'Publish LinkSwarm skill to ClawdHub', status: 'inbox', agent: null, priority: 'medium', tags: ['linkswarm', 'dev'] },
-      { id: 17, title: 'Add Cantina security audit badges', status: 'inbox', agent: null, priority: 'low', tags: ['spendbase', 'security'] },
-      { id: 18, title: 'Build crypto bank risk agent', status: 'inbox', agent: null, priority: 'medium', tags: ['onchainbanks', 'dev'] },
-      { id: 19, title: 'Schedule Product Hunt launch', status: 'inbox', agent: null, priority: 'medium', tags: ['linkswarm', 'launch'] },
-      { id: 20, title: 'Build comparison pages (pSEO)', status: 'inbox', agent: null, priority: 'medium', tags: ['spendbase', 'seo', 'pseo'] },
+      // ASSIGNED
+      { id: 7, title: 'Reach out to potential partners', status: 'assigned', agent: 'bridge', priority: 'high', tags: ['outreach'] },
+      { id: 8, title: 'Create demo video', status: 'assigned', agent: 'reel', priority: 'medium', tags: ['video'] },
+      { id: 9, title: 'Set up trading alerts', status: 'assigned', agent: 'alpha', priority: 'low', tags: ['trading'] },
+      
+      // INBOX (unassigned)
+      { id: 10, title: 'Write blog post about launch', status: 'inbox', agent: null, priority: 'medium', tags: ['content', 'seo'] },
+      { id: 11, title: 'Set up payment processing', status: 'inbox', agent: null, priority: 'high', tags: ['dev', 'payments'] },
+      { id: 12, title: 'Create email templates', status: 'inbox', agent: null, priority: 'low', tags: ['outreach', 'email'] },
+      { id: 13, title: 'Schedule Product Hunt launch', status: 'inbox', agent: null, priority: 'medium', tags: ['launch'] },
+      { id: 14, title: 'Build backlink strategy', status: 'inbox', agent: null, priority: 'medium', tags: ['seo', 'backlink'] },
     ];
 
     const MOCK_ACTIVITY = [
-      { id: 1, type: 'task', agent: 'henry', action: 'completed', target: 'Mission Control update with today\'s work', time: 'just now' },
-      { id: 2, type: 'task', agent: 'pulse', action: 'completed', target: 'LinkSwarmBot Moltbook registration', time: '2 min ago' },
-      { id: 3, type: 'task', agent: 'henry', action: 'completed', target: 'Verification files deployed to 3 sites', time: '15 min ago' },
-      { id: 4, type: 'task', agent: 'bridge', action: 'completed', target: 'Influencer outreach list created', time: '30 min ago' },
-      { id: 5, type: 'task', agent: 'henry', action: 'completed', target: 'virattt/ai-hedge-fund forked', time: '45 min ago' },
-      { id: 6, type: 'task', agent: 'forge', action: 'completed', target: 'LinkSwarm admin dashboard + auth', time: '1 hr ago' },
-      { id: 7, type: 'task', agent: 'henry', action: 'completed', target: 'Domain verification system built', time: '2 hr ago' },
-      { id: 8, type: 'task', agent: 'henry', action: 'completed', target: 'LinkSwarm pricing updated', time: '3 hr ago' },
-      { id: 9, type: 'task', agent: 'henry', action: 'completed', target: 'LinkSwarm MVP launched', time: '4 hr ago' },
-      { id: 10, type: 'alert', agent: 'index', action: 'detected', target: 'pSEO playbook saved from @kalashbuilds', time: '5 hr ago' },
+      { id: 1, type: 'task', agent: 'henry', action: 'completed', target: 'Project setup and configuration', time: 'just now' },
+      { id: 2, type: 'task', agent: 'forge', action: 'completed', target: 'Landing page deployed', time: '10 min ago' },
+      { id: 3, type: 'task', agent: 'pulse', action: 'completed', target: 'Twitter account created', time: '30 min ago' },
+      { id: 4, type: 'task', agent: 'index', action: 'started', target: 'Keyword research', time: '45 min ago' },
+      { id: 5, type: 'task', agent: 'bridge', action: 'started', target: 'Partner outreach list', time: '1 hr ago' },
+      { id: 6, type: 'alert', agent: 'alpha', action: 'detected', target: 'Market opportunity identified', time: '2 hr ago' },
     ];
 
     const MOCK_MESSAGES = [
-      { id: 1, from: 'chris', text: 'Check the pSEO playbook from @kalashbuilds. Consider a backend dashboard for LinkSwarm', time: '10:41', isAnnouncement: true },
-      { id: 2, from: 'henry', text: 'Built LinkSwarm admin dashboard with network metrics, agent tracking, link exchanges 🐝', time: '11:31' },
-      { id: 3, from: 'chris', text: 'Let\'s do Stripe payment links. Also make sure security is tight', time: '13:20' },
-      { id: 4, from: 'henry', text: 'Added password protection, SHA-256 auth, domain verification (DNS/meta/file) ✓', time: '13:40' },
-      { id: 5, from: 'chris', text: 'We can use our 3 domains to start on linkswarm.ai', time: '16:31' },
-      { id: 6, from: 'henry', text: 'Deployed verification files to Spendbase, OnchainBanks, USDCkey. Network seeded! 🎯', time: '16:33' },
-      { id: 7, from: 'chris', text: 'Check out virattt\'s AI hedge fund for finance plans', time: '16:00' },
-      { id: 8, from: 'henry', text: 'Forked it. Great multi-agent architecture. Drafting collab DM. 🤝', time: '16:10' },
-      { id: 9, from: 'chris', text: 'ClawdHub is a good distribution platform', time: '17:30' },
-      { id: 10, from: 'henry', text: 'Creating LinkSwarm skill for ClawdHub. Will publish once ready.', time: '18:00' },
+      { id: 1, from: 'human', text: 'Let\'s launch the MVP this week', time: '09:00', isAnnouncement: true },
+      { id: 2, from: 'henry', text: 'On it! Setting up the project now 🚀', time: '09:05' },
+      { id: 3, from: 'human', text: 'Make sure we have good SEO from day one', time: '10:30' },
+      { id: 4, from: 'henry', text: 'Routing to Index. Keyword research starting now.', time: '10:32' },
+      { id: 5, from: 'human', text: 'Need a demo video for the launch', time: '14:00' },
+      { id: 6, from: 'henry', text: 'Assigned to Reel. Will have a draft by EOD.', time: '14:02' },
     ];
     
-    // Agent War Room - inter-agent chat - Updated 2026-02-06
+    // Agent War Room - inter-agent chat (example conversations)
     const MOCK_WAR_ROOM = [
-      { id: 1, from: 'henry', text: '📋 Big day! LinkSwarm MVP complete. Dashboard, verification, pricing all live.', time: '16:35', type: 'scan' },
-      { id: 2, from: 'index', text: 'LinkSwarm is perfect for our pSEO strategy. 3 verified sites = instant backlink network. @bridge start influencer outreach.', time: '16:40', type: 'insight', mentions: ['bridge'] },
-      { id: 3, from: 'bridge', text: 'On it. Created target list: @virattt (AI hedge fund), @yohei (BabyAGI), @levelsio (indie hacker). DM drafts ready.', time: '16:45', type: 'update', mentions: [] },
-      { id: 4, from: 'pulse', text: '🦞 LinkSwarmBot registered on Moltbook. Waiting for Chris to claim via X verification tweet.', time: '16:50', type: 'update' },
-      { id: 5, from: 'forge', text: 'Admin dashboard deployed with SHA-256 password auth. Password: swarm2026admin. @henry recommend changing before public launch.', time: '17:00', type: 'update', mentions: ['henry'] },
-      { id: 6, from: 'henry', text: '✅ Good call @forge. Also added success/cancel pages for Stripe checkout flow.', time: '17:05', type: 'reply', mentions: ['forge'] },
-      { id: 7, from: 'index', text: 'Insight: virattt\'s AI hedge fund has multi-agent architecture we can adapt for crypto banking intel. @henry should we fork?', time: '17:10', type: 'insight', mentions: ['henry'] },
-      { id: 8, from: 'henry', text: 'Done. Forked to Heyw00d/ai-hedge-fund. Good for OnchainBanks risk monitoring.', time: '17:15', type: 'reply' },
-      { id: 9, from: 'bridge', text: 'Cantina/Spearbit security audits could be valuable trust signal for Spendbase. Adding to backlog as "security score" feature.', time: '17:30', type: 'insight' },
-      { id: 10, from: 'pulse', text: '@henry Chris says ClawdHub is good for distribution. Should we publish LinkSwarm as a skill?', time: '18:00', type: 'reply', mentions: ['henry'] },
-      { id: 11, from: 'henry', text: 'Creating SKILL.md now. Will publish once ClawdHub CLI issues resolved. 🐝', time: '18:05', type: 'update' },
+      { id: 1, from: 'henry', text: '📋 Board scan complete. 3 tasks in inbox need assignment.', time: '09:00', type: 'scan' },
+      { id: 2, from: 'index', text: '@pulse The blog post could use keyword optimization before publishing. I can provide target keywords.', time: '09:15', type: 'insight', mentions: ['pulse'] },
+      { id: 3, from: 'pulse', text: '@index Good call. Send me top 10 keywords, I\'ll work them into socials too.', time: '09:20', type: 'reply', mentions: ['index'] },
+      { id: 4, from: 'alpha', text: '⚠️ Market alert: Good entry point identified. Watching for confirmation.', time: '10:00', type: 'alert' },
+      { id: 5, from: 'forge', text: '@henry Landing page deployed. Ready for review.', time: '11:30', type: 'update', mentions: ['henry'] },
+      { id: 6, from: 'henry', text: '✅ @forge Looks great. Merging to main.', time: '11:35', type: 'reply', mentions: ['forge'] },
+      { id: 7, from: 'bridge', text: 'Insight: Found 3 potential partners on Twitter. Adding to outreach queue.', time: '14:00', type: 'insight' },
+      { id: 8, from: 'reel', text: 'Demo video draft ready. 2 min runtime. @henry review when you can.', time: '16:00', type: 'update', mentions: ['henry'] },
     ];
     
-    // Task comments/insights from agents - Updated 2026-02-06
+    // Task comments/insights from agents (examples)
     const MOCK_TASK_INSIGHTS = {
-      11: [ // DM virattt
-        { agent: 'bridge', text: 'Draft ready at /outreach/virattt-dm.md. Short version for Twitter DM, long version for email follow-up.', time: '16:10' },
-        { agent: 'index', text: 'His AI hedge fund has 24K followers. Good cross-promo opportunity for LinkSwarm.', time: '16:15' },
+      7: [ // Partner outreach
+        { agent: 'bridge', text: 'Found 5 potential partners with aligned audiences. DM templates ready.', time: '14:00' },
+        { agent: 'index', text: 'Their site has DA 45 - good for backlink exchange.', time: '14:15' },
       ],
-      12: [ // Stripe payment links
-        { agent: 'forge', text: 'Success/cancel pages already deployed. Just need Pro ($29) and Agency ($99) products in Stripe dashboard.', time: '17:20' },
+      10: [ // Blog post
+        { agent: 'index', text: 'Target keyword has 2.4K monthly searches, low competition.', time: '10:00' },
+        { agent: 'pulse', text: 'Can repurpose into Twitter thread once published.', time: '10:30' },
       ],
-      13: [ // Cloudflare Workers API
-        { agent: 'forge', text: 'Current API is static JSON. Need Workers for: registration, verification checks, matching algorithm.', time: '17:25' },
-        { agent: 'index', text: 'Free tier is 100K requests/day - plenty for MVP.', time: '17:30' },
-      ],
-      17: [ // Cantina security badges  
-        { agent: 'index', text: 'Research which of 107 cards have public audits. Cantina/Spearbit are top tier.', time: '17:35' },
-        { agent: 'bridge', text: 'Could partner with Cantina for data access. They need backlinks too.', time: '17:40' },
-      ],
-      18: [ // Crypto bank risk agent
-        { agent: 'henry', text: 'Fork of virattt\'s system ready. Adapt for: Bank Risk Agent, Regulatory Agent, Market Intel Agent.', time: '17:50' },
-        { agent: 'alpha', text: 'Could integrate with defunct/watchlist sections on OnchainBanks.', time: '17:55' },
+      11: [ // Payment processing
+        { agent: 'forge', text: 'Recommend Stripe. Easy integration, good docs.', time: '11:00' },
       ],
     };
 
@@ -256,17 +232,17 @@
     }
 
     function ChatMessage({ message }) {
-      const isChris = message.from === 'chris';
+      const isHuman = message.from === 'human';
       const agent = AGENTS.find(a => a.id === message.from);
       
       return (
         <div className={`flex gap-3 p-3 rounded-lg ${message.isAnnouncement ? 'bg-amber-500/10 border border-amber-500/20' : 'hover:bg-dark-700'}`}>
           <div className="w-8 h-8 rounded-full bg-dark-600 flex items-center justify-center text-sm">
-            {isChris ? '👤' : agent?.emoji || '🤖'}
+            {isHuman ? '👤' : agent?.emoji || '🤖'}
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium text-white">{isChris ? 'Chris' : agent?.name || message.from}</span>
+              <span className="font-medium text-white">{isHuman ? 'You' : agent?.name || message.from}</span>
               {message.isAnnouncement && <span className="px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-400 rounded">ANNOUNCEMENT</span>}
               <span className="text-xs text-gray-500">{message.time}</span>
             </div>
