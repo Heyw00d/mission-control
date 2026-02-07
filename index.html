@@ -509,7 +509,7 @@
               type="text"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="dev, spendbase, urgent"
+              placeholder="dev, project, urgent"
               className="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500"
             />
           </div>
@@ -543,7 +543,7 @@
       const [warRoom, setWarRoom] = useState(MOCK_WAR_ROOM);
       const [newWarRoomMsg, setNewWarRoomMsg] = useState('');
       const [taskInsights, setTaskInsights] = useState(MOCK_TASK_INSIGHTS);
-      const [currentProject, setCurrentProject] = useState('spendbase');
+      const [currentProject, setCurrentProject] = useState('project');
       const [showMetrics, setShowMetrics] = useState(false);
       const [showStandup, setShowStandup] = useState(false);
       
@@ -600,7 +600,7 @@
         if (!newMessage.trim()) return;
         setMessages([...messages, {
           id: Date.now(),
-          from: 'chris',
+          from: 'human',
           text: newMessage,
           time: currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
           isAnnouncement: newMessage.startsWith('/announce ')
