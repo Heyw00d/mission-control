@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mission Control</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: { 900: '#0a0a0f', 800: '#12121a', 700: '#1a1a24', 600: '#24242f' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #1a1a24; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #3f3f4a; border-radius: 3px; }
+    .status-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .task-card { transition: all 0.2s ease; }
+    .task-card:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body class="dark bg-dark-900 text-gray-100 min-h-screen">
+  <div id="app"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Projects/Businesses
+    const PROJECTS = [
+      { id: 'spendbase', name: 'Spendbase', emoji: '💳', color: 'emerald', status: 'active' },
+      { id: 'onchainbanks', name: 'OnchainBanks', emoji: '🏦', color: 'blue', status: 'active' },
+      { id: 'usdckey', name: 'USDCkey', emoji: '🔑', color: 'purple', status: 'active' },
+      { id: 'linkswarm', name: 'LinkSwarm', emoji: '🐝', color: 'amber', status: 'active' },
+    ];
+    
+    // Smart routing rules
+    const ROUTING_RULES = {
+      'social': 'pulse', 'twitter': 'pulse', 'telegram': 'pulse', 'content': 'pulse', 'moltbook': 'pulse', 'x.com': 'pulse',
+      'seo': 'index', 'keyword': 'index', 'backlink': 'index', 'ranking': 'index', 'linkswarm': 'index', 'pseo': 'index',
+      'dev': 'forge', 'bug': 'forge', 'code': 'forge', 'deploy': 'forge', 'api': 'forge', 'dashboard': 'forge',
+      'video': 'reel', 'edit': 'reel', 'thumbnail': 'reel',
+      'outreach': 'bridge', 'partnership': 'bridge', 'email': 'bridge', 'meeting': 'bridge', 'influencer': 'bridge', 'virattt': 'bridge',
+      'trading': 'alpha', 'defi': 'alpha', 'swap': 'alpha', 'yield': 'alpha', 'solana': 'alpha',
+    };
+
+    // Agent definitions
+    const AGENTS = [
+      { id: 'henry', name: 'Henry', role: 'Lead Agent', emoji: '⚡', color: 'emerald', desc: 'Orchestrates all agents, main point of contact' },
+      { id: 'pulse', name: 'Pulse', role: 'Social Media', emoji: '📱', color: 'pink', desc: 'Twitter/X, Telegram, engagement, trends' },
+      { id: 'reel', name: 'Reel', role: 'Video Editor', emoji: '🎬', color: 'purple', desc: 'Video cuts, thumbnails, motion graphics' },
+      { id: 'bridge', name: 'Bridge', role: 'Outreach', emoji: '🤝', color: 'amber', desc: 'Partnerships, emails, meeting booking' },
+      { id: 'index', name: 'Index', role: 'SEO Agent', emoji: '🔍', color: 'blue', desc: 'Keywords, backlinks, rankings, audits' },
+      { id: 'forge', name: 'Forge', role: 'Developer', emoji: '🔧', color: 'orange', desc: 'Code, bugs, deployments, automation' },
+      { id: 'alpha', name: 'Alpha', role: 'Crypto Trader', emoji: '📈', color: 'cyan', desc: 'Real-time trading, market analysis, DeFi' },
+    ];
+
+    // Task status columns
+    const COLUMNS = ['inbox', 'assigned', 'in-progress', 'review', 'done'];
+    const COLUMN_LABELS = { 'inbox': 'Inbox', 'assigned': 'Assigned', 'in-progress': 'In Progress', 'review': 'Review', 'done': 'Done' };
+    const COLUMN_COLORS = { 'inbox': 'gray', 'assigned': 'yellow', 'in-progress': 'blue', 'review': 'purple', 'done': 'emerald' };
+
+    // Task data - Updated 2026-02-06
+    const MOCK_TASKS = [
+      // DONE TODAY
+      { id: 1, title: 'Build LinkSwarm MVP', status: 'done', agent: 'henry', priority: 'high', tags: ['linkswarm', 'dev'] },
+      { id: 2, title: 'Add admin dashboard with auth', status: 'done', agent: 'forge', priority: 'high', tags: ['linkswarm', 'security'] },
+      { id: 3, title: 'Domain verification system (DNS/meta/file)', status: 'done', agent: 'henry', priority: 'high', tags: ['linkswarm', 'dev'] },
+      { id: 4, title: 'Register LinkSwarmBot on Moltbook', status: 'done', agent: 'pulse', priority: 'medium', tags: ['moltbook', 'social'] },
+      { id: 5, title: 'Add verification files to 3 sites', status: 'done', agent: 'henry', priority: 'medium', tags: ['linkswarm', 'deploy'] },
+      { id: 6, title: 'Fork virattt/ai-hedge-fund', status: 'done', agent: 'henry', priority: 'medium', tags: ['dev', 'research'] },
+      { id: 7, title: 'Create influencer outreach list', status: 'done', agent: 'bridge', priority: 'medium', tags: ['outreach', 'linkswarm'] },
+      { id: 8, title: 'Update pricing (generous free tier)', status: 'done', agent: 'henry', priority: 'medium', tags: ['linkswarm'] },
+      
+      // IN PROGRESS
+      { id: 9, title: 'Claim LinkSwarmBot on Moltbook', status: 'in-progress', agent: 'pulse', priority: 'high', tags: ['moltbook', 'social'] },
+      { id: 10, title: 'Set up linkswarm.ai DNS', status: 'in-progress', agent: 'forge', priority: 'high', tags: ['linkswarm', 'deploy'] },
+      { id: 11, title: 'DM virattt about collaboration', status: 'assigned', agent: 'bridge', priority: 'high', tags: ['outreach', 'influencer'] },
+      
+      // BACKLOG - NEW
+      { id: 12, title: 'Create Stripe payment links', status: 'inbox', agent: null, priority: 'high', tags: ['linkswarm', 'payments'] },
+      { id: 13, title: 'Build Cloudflare Workers API', status: 'inbox', agent: null, priority: 'high', tags: ['linkswarm', 'api', 'dev'] },
+      { id: 14, title: 'Post LinkSwarm announcement on Moltbook', status: 'inbox', agent: null, priority: 'medium', tags: ['moltbook', 'social'] },
+      { id: 15, title: 'Submit to AI agent directories', status: 'inbox', agent: null, priority: 'medium', tags: ['linkswarm', 'distribution'] },
+      { id: 16, title: 'Publish LinkSwarm skill to ClawdHub', status: 'inbox', agent: null, priority: 'medium', tags: ['linkswarm', 'dev'] },
+      { id: 17, title: 'Add Cantina security audit badges', status: 'inbox', agent: null, priority: 'low', tags: ['spendbase', 'security'] },
+      { id: 18, title: 'Build crypto bank risk agent', status: 'inbox', agent: null, priority: 'medium', tags: ['onchainbanks', 'dev'] },
+      { id: 19, title: 'Schedule Product Hunt launch', status: 'inbox', agent: null, priority: 'medium', tags: ['linkswarm', 'launch'] },
+      { id: 20, title: 'Build comparison pages (pSEO)', status: 'inbox', agent: null, priority: 'medium', tags: ['spendbase', 'seo', 'pseo'] },
+    ];
+
+    const MOCK_ACTIVITY = [
+      { id: 1, type: 'task', agent: 'henry', action: 'completed', target: 'Mission Control update with today\'s work', time: 'just now' },
+      { id: 2, type: 'task', agent: 'pulse', action: 'completed', target: 'LinkSwarmBot Moltbook registration', time: '2 min ago' },
+      { id: 3, type: 'task', agent: 'henry', action: 'completed', target: 'Verification files deployed to 3 sites', time: '15 min ago' },
+      { id: 4, type: 'task', agent: 'bridge', action: 'completed', target: 'Influencer outreach list created', time: '30 min ago' },
+      { id: 5, type: 'task', agent: 'henry', action: 'completed', target: 'virattt/ai-hedge-fund forked', time: '45 min ago' },
+      { id: 6, type: 'task', agent: 'forge', action: 'completed', target: 'LinkSwarm admin dashboard + auth', time: '1 hr ago' },
+      { id: 7, type: 'task', agent: 'henry', action: 'completed', target: 'Domain verification system built', time: '2 hr ago' },
+      { id: 8, type: 'task', agent: 'henry', action: 'completed', target: 'LinkSwarm pricing updated', time: '3 hr ago' },
+      { id: 9, type: 'task', agent: 'henry', action: 'completed', target: 'LinkSwarm MVP launched', time: '4 hr ago' },
+      { id: 10, type: 'alert', agent: 'index', action: 'detected', target: 'pSEO playbook saved from @kalashbuilds', time: '5 hr ago' },
+    ];
+
+    const MOCK_MESSAGES = [
+      { id: 1, from: 'chris', text: 'Check the pSEO playbook from @kalashbuilds. Consider a backend dashboard for LinkSwarm', time: '10:41', isAnnouncement: true },
+      { id: 2, from: 'henry', text: 'Built LinkSwarm admin dashboard with network metrics, agent tracking, link exchanges 🐝', time: '11:31' },
+      { id: 3, from: 'chris', text: 'Let\'s do Stripe payment links. Also make sure security is tight', time: '13:20' },
+      { id: 4, from: 'henry', text: 'Added password protection, SHA-256 auth, domain verification (DNS/meta/file) ✓', time: '13:40' },
+      { id: 5, from: 'chris', text: 'We can use our 3 domains to start on linkswarm.ai', time: '16:31' },
+      { id: 6, from: 'henry', text: 'Deployed verification files to Spendbase, OnchainBanks, USDCkey. Network seeded! 🎯', time: '16:33' },
+      { id: 7, from: 'chris', text: 'Check out virattt\'s AI hedge fund for finance plans', time: '16:00' },
+      { id: 8, from: 'henry', text: 'Forked it. Great multi-agent architecture. Drafting collab DM. 🤝', time: '16:10' },
+      { id: 9, from: 'chris', text: 'ClawdHub is a good distribution platform', time: '17:30' },
+      { id: 10, from: 'henry', text: 'Creating LinkSwarm skill for ClawdHub. Will publish once ready.', time: '18:00' },
+    ];
+    
+    // Agent War Room - inter-agent chat - Updated 2026-02-06
+    const MOCK_WAR_ROOM = [
+      { id: 1, from: 'henry', text: '📋 Big day! LinkSwarm MVP complete. Dashboard, verification, pricing all live.', time: '16:35', type: 'scan' },
+      { id: 2, from: 'index', text: 'LinkSwarm is perfect for our pSEO strategy. 3 verified sites = instant backlink network. @bridge start influencer outreach.', time: '16:40', type: 'insight', mentions: ['bridge'] },
+      { id: 3, from: 'bridge', text: 'On it. Created target list: @virattt (AI hedge fund), @yohei (BabyAGI), @levelsio (indie hacker). DM drafts ready.', time: '16:45', type: 'update', mentions: [] },
+      { id: 4, from: 'pulse', text: '🦞 LinkSwarmBot registered on Moltbook. Waiting for Chris to claim via X verification tweet.', time: '16:50', type: 'update' },
+      { id: 5, from: 'forge', text: 'Admin dashboard deployed with SHA-256 password auth. Password: swarm2026admin. @henry recommend changing before public launch.', time: '17:00', type: 'update', mentions: ['henry'] },
+      { id: 6, from: 'henry', text: '✅ Good call @forge. Also added success/cancel pages for Stripe checkout flow.', time: '17:05', type: 'reply', mentions: ['forge'] },
+      { id: 7, from: 'index', text: 'Insight: virattt\'s AI hedge fund has multi-agent architecture we can adapt for crypto banking intel. @henry should we fork?', time: '17:10', type: 'insight', mentions: ['henry'] },
+      { id: 8, from: 'henry', text: 'Done. Forked to Heyw00d/ai-hedge-fund. Good for OnchainBanks risk monitoring.', time: '17:15', type: 'reply' },
+      { id: 9, from: 'bridge', text: 'Cantina/Spearbit security audits could be valuable trust signal for Spendbase. Adding to backlog as "security score" feature.', time: '17:30', type: 'insight' },
+      { id: 10, from: 'pulse', text: '@henry Chris says ClawdHub is good for distribution. Should we publish LinkSwarm as a skill?', time: '18:00', type: 'reply', mentions: ['henry'] },
+      { id: 11, from: 'henry', text: 'Creating SKILL.md now. Will publish once ClawdHub CLI issues resolved. 🐝', time: '18:05', type: 'update' },
+    ];
+    
+    // Task comments/insights from agents - Updated 2026-02-06
+    const MOCK_TASK_INSIGHTS = {
+      11: [ // DM virattt
+        { agent: 'bridge', text: 'Draft ready at /outreach/virattt-dm.md. Short version for Twitter DM, long version for email follow-up.', time: '16:10' },
+        { agent: 'index', text: 'His AI hedge fund has 24K followers. Good cross-promo opportunity for LinkSwarm.', time: '16:15' },
+      ],
+      12: [ // Stripe payment links
+        { agent: 'forge', text: 'Success/cancel pages already deployed. Just need Pro ($29) and Agency ($99) products in Stripe dashboard.', time: '17:20' },
+      ],
+      13: [ // Cloudflare Workers API
+        { agent: 'forge', text: 'Current API is static JSON. Need Workers for: registration, verification checks, matching algorithm.', time: '17:25' },
+        { agent: 'index', text: 'Free tier is 100K requests/day - plenty for MVP.', time: '17:30' },
+      ],
+      17: [ // Cantina security badges  
+        { agent: 'index', text: 'Research which of 107 cards have public audits. Cantina/Spearbit are top tier.', time: '17:35' },
+        { agent: 'bridge', text: 'Could partner with Cantina for data access. They need backlinks too.', time: '17:40' },
+      ],
+      18: [ // Crypto bank risk agent
+        { agent: 'henry', text: 'Fork of virattt\'s system ready. Adapt for: Bank Risk Agent, Regulatory Agent, Market Intel Agent.', time: '17:50' },
+        { agent: 'alpha', text: 'Could integrate with defunct/watchlist sections on OnchainBanks.', time: '17:55' },
+      ],
+    };
+
+    // Components
+    function StatusDot({ status, size = 'sm' }) {
+      const sizeClass = size === 'sm' ? 'w-2 h-2' : 'w-3 h-3';
+      const colorClass = status === 'online' ? 'bg-emerald-400' : status === 'working' ? 'bg-yellow-400' : 'bg-gray-500';
+      return <span className={`${sizeClass} ${colorClass} rounded-full status-dot`}></span>;
+    }
+
+    function AgentCard({ agent, isActive, isWorking }) {
+      const colors = {
+        emerald: 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30',
+        blue: 'from-blue-500/20 to-blue-600/10 border-blue-500/30',
+        purple: 'from-purple-500/20 to-purple-600/10 border-purple-500/30',
+        pink: 'from-pink-500/20 to-pink-600/10 border-pink-500/30',
+        orange: 'from-orange-500/20 to-orange-600/10 border-orange-500/30',
+        amber: 'from-amber-500/20 to-amber-600/10 border-amber-500/30',
+        cyan: 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30',
+      };
+      
+      return (
+        <div className={`p-3 rounded-xl bg-gradient-to-br ${colors[agent.color]} border ${isActive ? 'opacity-100' : 'opacity-50'} transition-all hover:scale-[1.02] cursor-pointer`}>
+          <div className="flex items-center gap-3">
+            <div className="text-2xl">{agent.emoji}</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-white truncate">{agent.name}</span>
+                {isWorking && <span className="px-1.5 py-0.5 text-[10px] font-medium bg-emerald-500/20 text-emerald-400 rounded">WORKING</span>}
+              </div>
+              <div className="text-xs text-gray-400 truncate">{agent.role}</div>
+            </div>
+            <StatusDot status={isActive ? (isWorking ? 'working' : 'online') : 'offline'} />
+          </div>
+        </div>
+      );
+    }
+
+    function TaskCard({ task }) {
+      const priorityColors = { high: 'border-l-red-500', medium: 'border-l-yellow-500', low: 'border-l-gray-500' };
+      const agent = AGENTS.find(a => a.id === task.agent);
+      
+      return (
+        <div className={`task-card p-3 bg-dark-700 rounded-lg border-l-2 ${priorityColors[task.priority]} cursor-pointer hover:bg-dark-600`}>
+          <div className="text-sm font-medium text-white mb-2">{task.title}</div>
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1">
+              {task.tags.map(tag => (
+                <span key={tag} className="px-1.5 py-0.5 text-[10px] bg-dark-600 text-gray-400 rounded">{tag}</span>
+              ))}
+            </div>
+            {agent && <span className="text-sm">{agent.emoji}</span>}
+          </div>
+        </div>
+      );
+    }
+
+    function TaskColumn({ status, tasks, insights }) {
+      const columnTasks = tasks.filter(t => t.status === status);
+      const color = COLUMN_COLORS[status];
+      
+      return (
+        <div className="flex-1 min-w-[200px]">
+          <div className="flex items-center gap-2 mb-3">
+            <span className={`w-2 h-2 rounded-full bg-${color}-400`}></span>
+            <span className="text-sm font-medium text-gray-300">{COLUMN_LABELS[status]}</span>
+            <span className="text-xs text-gray-500 bg-dark-700 px-1.5 py-0.5 rounded">{columnTasks.length}</span>
+          </div>
+          <div className="space-y-2">
+            {columnTasks.map(task => (
+              <TaskCardWithInsights key={task.id} task={task} insights={insights[task.id]} />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function ActivityItem({ activity }) {
+      const agent = AGENTS.find(a => a.id === activity.agent) || { emoji: '👤', name: activity.agent };
+      const actionColors = { completed: 'text-emerald-400', started: 'text-blue-400', sent: 'text-purple-400', detected: 'text-cyan-400', spawned: 'text-amber-400', created: 'text-pink-400' };
+      
+      return (
+        <div className="flex items-start gap-3 p-2 hover:bg-dark-700 rounded-lg transition">
+          <span className="text-lg">{agent.emoji}</span>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm">
+              <span className="font-medium text-white">{agent.name}</span>
+              <span className={`mx-1 ${actionColors[activity.action] || 'text-gray-400'}`}>{activity.action}</span>
+              <span className="text-gray-300">{activity.target}</span>
+            </div>
+            <div className="text-xs text-gray-500">{activity.time}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function ChatMessage({ message }) {
+      const isChris = message.from === 'chris';
+      const agent = AGENTS.find(a => a.id === message.from);
+      
+      return (
+        <div className={`flex gap-3 p-3 rounded-lg ${message.isAnnouncement ? 'bg-amber-500/10 border border-amber-500/20' : 'hover:bg-dark-700'}`}>
+          <div className="w-8 h-8 rounded-full bg-dark-600 flex items-center justify-center text-sm">
+            {isChris ? '👤' : agent?.emoji || '🤖'}
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-medium text-white">{isChris ? 'Chris' : agent?.name || message.from}</span>
+              {message.isAnnouncement && <span className="px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-400 rounded">ANNOUNCEMENT</span>}
+              <span className="text-xs text-gray-500">{message.time}</span>
+            </div>
+            <div className="text-sm text-gray-300">{message.text}</div>
+          </div>
+        </div>
+      );
+    }
+    
+    // War Room Message (agent-to-agent)
+    function WarRoomMessage({ message }) {
+      const agent = AGENTS.find(a => a.id === message.from);
+      const typeStyles = {
+        scan: 'border-l-2 border-gray-500',
+        insight: 'border-l-2 border-emerald-500 bg-emerald-500/5',
+        alert: 'border-l-2 border-red-500 bg-red-500/5',
+        update: 'border-l-2 border-blue-500',
+        reply: 'border-l-2 border-purple-500',
+      };
+      
+      // Highlight @mentions
+      const renderText = (text) => {
+        const parts = text.split(/(@\w+)/g);
+        return parts.map((part, i) => {
+          if (part.startsWith('@')) {
+            const mentionedAgent = AGENTS.find(a => `@${a.id}` === part.toLowerCase() || `@${a.name.toLowerCase()}` === part.toLowerCase());
+            return (
+              <span key={i} className="px-1 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs font-medium">
+                {part}
+              </span>
+            );
+          }
+          return part;
+        });
+      };
+      
+      return (
+        <div className={`flex gap-3 p-3 rounded-lg ${typeStyles[message.type] || ''} hover:bg-dark-700/50 transition`}>
+          <div className="w-7 h-7 rounded-full bg-dark-600 flex items-center justify-center text-sm flex-shrink-0">
+            {agent?.emoji || '🤖'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-medium text-white text-sm">{agent?.name || message.from}</span>
+              {message.type === 'insight' && <span className="px-1.5 py-0.5 text-[9px] bg-emerald-500/20 text-emerald-400 rounded uppercase">Insight</span>}
+              {message.type === 'alert' && <span className="px-1.5 py-0.5 text-[9px] bg-red-500/20 text-red-400 rounded uppercase">Alert</span>}
+              {message.type === 'scan' && <span className="px-1.5 py-0.5 text-[9px] bg-gray-500/20 text-gray-400 rounded uppercase">Scan</span>}
+              <span className="text-xs text-gray-500 ml-auto">{message.time}</span>
+            </div>
+            <div className="text-sm text-gray-300">{renderText(message.text)}</div>
+          </div>
+        </div>
+      );
+    }
+    
+    // Task with insights
+    function TaskCardWithInsights({ task, insights }) {
+      const [showInsights, setShowInsights] = useState(false);
+      const priorityColors = { high: 'border-l-red-500', medium: 'border-l-yellow-500', low: 'border-l-gray-500' };
+      const agent = AGENTS.find(a => a.id === task.agent);
+      const taskInsights = insights || [];
+      
+      return (
+        <div className={`task-card bg-dark-700 rounded-lg border-l-2 ${priorityColors[task.priority]} cursor-pointer hover:bg-dark-600`}>
+          <div className="p-3" onClick={() => taskInsights.length > 0 && setShowInsights(!showInsights)}>
+            <div className="text-sm font-medium text-white mb-2">{task.title}</div>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-1 flex-wrap">
+                {task.tags.map(tag => (
+                  <span key={tag} className="px-1.5 py-0.5 text-[10px] bg-dark-600 text-gray-400 rounded">{tag}</span>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                {taskInsights.length > 0 && (
+                  <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/></svg>
+                    {taskInsights.length}
+                  </span>
+                )}
+                {agent && <span className="text-sm">{agent.emoji}</span>}
+              </div>
+            </div>
+          </div>
+          {showInsights && taskInsights.length > 0 && (
+            <div className="border-t border-dark-600 p-2 space-y-2">
+              {taskInsights.map((insight, i) => {
+                const insightAgent = AGENTS.find(a => a.id === insight.agent);
+                return (
+                  <div key={i} className="flex gap-2 p-2 bg-dark-800 rounded text-xs">
+                    <span>{insightAgent?.emoji}</span>
+                    <div>
+                      <span className="font-medium text-gray-300">{insightAgent?.name}: </span>
+                      <span className="text-gray-400">{insight.text}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Modal Component
+    function Modal({ isOpen, onClose, title, children }) {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
+          <div className="relative bg-dark-800 border border-dark-600 rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-dark-700">
+              <h2 className="text-lg font-semibold text-white">{title}</h2>
+              <button onClick={onClose} className="text-gray-400 hover:text-white transition">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[60vh]">{children}</div>
+          </div>
+        </div>
+      );
+    }
+
+    // Agent Detail Modal Content
+    function AgentDetail({ agent, sessions, onSpawn, onClose }) {
+      const agentSessions = sessions.filter(s => s.agentId === agent.id);
+      const colors = {
+        emerald: 'bg-emerald-500', blue: 'bg-blue-500', purple: 'bg-purple-500',
+        pink: 'bg-pink-500', orange: 'bg-orange-500', amber: 'bg-amber-500', cyan: 'bg-cyan-500'
+      };
+      
+      return (
+        <div className="space-y-4">
+          <div className="flex items-start gap-4">
+            <div className={`w-16 h-16 rounded-xl ${colors[agent.color]} flex items-center justify-center text-3xl`}>
+              {agent.emoji}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-white">{agent.name}</h3>
+              <p className="text-gray-400">{agent.role}</p>
+              <p className="text-sm text-gray-500 mt-1">{agent.desc}</p>
+            </div>
+            <button 
+              onClick={() => onSpawn(agent)}
+              className="px-4 py-2 bg-emerald-500 text-dark-900 font-medium rounded-lg hover:bg-emerald-400 transition"
+            >
+              Spawn Agent
+            </button>
+          </div>
+          
+          <div className="border-t border-dark-700 pt-4">
+            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Capabilities</h4>
+            <div className="flex flex-wrap gap-2">
+              {agent.id === 'henry' && ['Orchestration', 'Planning', 'Delegation', 'Reporting'].map(c => (
+                <span key={c} className="px-2 py-1 bg-dark-700 text-gray-300 text-xs rounded">{c}</span>
+              ))}
+              {agent.id === 'pulse' && ['Twitter/X', 'Telegram', 'Content Calendar', 'Engagement', 'Trends'].map(c => (
+                <span key={c} className="px-2 py-1 bg-dark-700 text-gray-300 text-xs rounded">{c}</span>
+              ))}
+              {agent.id === 'reel' && ['Video Editing', 'Thumbnails', 'Motion Graphics', 'Shorts/Reels'].map(c => (
+                <span key={c} className="px-2 py-1 bg-dark-700 text-gray-300 text-xs rounded">{c}</span>
+              ))}
+              {agent.id === 'bridge' && ['Email Outreach', 'Partnerships', 'Meeting Booking', 'CRM'].map(c => (
+                <span key={c} className="px-2 py-1 bg-dark-700 text-gray-300 text-xs rounded">{c}</span>
+              ))}
+              {agent.id === 'index' && ['Keyword Research', 'Backlinks', 'Site Audits', 'Rankings'].map(c => (
+                <span key={c} className="px-2 py-1 bg-dark-700 text-gray-300 text-xs rounded">{c}</span>
+              ))}
+              {agent.id === 'forge' && ['JavaScript', 'React', 'APIs', 'Git', 'Debugging'].map(c => (
+                <span key={c} className="px-2 py-1 bg-dark-700 text-gray-300 text-xs rounded">{c}</span>
+              ))}
+              {agent.id === 'alpha' && ['Jupiter DEX', 'Price Alerts', 'DCA', 'Yield Farming', 'Portfolio'].map(c => (
+                <span key={c} className="px-2 py-1 bg-dark-700 text-gray-300 text-xs rounded">{c}</span>
+              ))}
+            </div>
+          </div>
+          
+          <div className="border-t border-dark-700 pt-4">
+            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Active Sessions</h4>
+            {agentSessions.length > 0 ? (
+              <div className="space-y-2">
+                {agentSessions.map(s => (
+                  <div key={s.id} className="flex items-center justify-between p-3 bg-dark-700 rounded-lg">
+                    <div>
+                      <div className="text-sm font-medium text-white">{s.label || s.id}</div>
+                      <div className="text-xs text-gray-500">{s.lastMessage}</div>
+                    </div>
+                    <span className="text-xs text-gray-400">{s.time}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No active sessions. Click "Spawn Agent" to start one.</p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // New Task Modal
+    function NewTaskModal({ onClose, onSubmit, agents }) {
+      const [title, setTitle] = useState('');
+      const [agent, setAgent] = useState('');
+      const [priority, setPriority] = useState('medium');
+      const [tags, setTags] = useState('');
+      
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        onSubmit({
+          id: Date.now(),
+          title,
+          agent: agent || null,
+          priority,
+          status: agent ? 'assigned' : 'inbox',
+          tags: tags.split(',').map(t => t.trim()).filter(Boolean)
+        });
+        onClose();
+      };
+      
+      return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">Task Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="What needs to be done?"
+              className="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Assign to</label>
+              <select
+                value={agent}
+                onChange={(e) => setAgent(e.target.value)}
+                className="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gray-500"
+              >
+                <option value="">Unassigned (Inbox)</option>
+                {agents.map(a => (
+                  <option key={a.id} value={a.id}>{a.emoji} {a.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Priority</label>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gray-500"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">Tags (comma separated)</label>
+            <input
+              type="text"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="dev, spendbase, urgent"
+              className="w-full bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500"
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 py-2 bg-dark-700 text-gray-400 rounded-lg hover:bg-dark-600 transition">
+              Cancel
+            </button>
+            <button type="submit" className="flex-1 py-2 bg-emerald-500 text-dark-900 font-medium rounded-lg hover:bg-emerald-400 transition">
+              Create Task
+            </button>
+          </div>
+        </form>
+      );
+    }
+
+    function App() {
+      const [tasks, setTasks] = useState(MOCK_TASKS);
+      const [activity, setActivity] = useState(MOCK_ACTIVITY);
+      const [messages, setMessages] = useState(MOCK_MESSAGES);
+      const [activeAgents, setActiveAgents] = useState(['henry']);
+      const [workingAgents, setWorkingAgents] = useState(['henry']);
+      const [currentTime, setCurrentTime] = useState(new Date());
+      const [newMessage, setNewMessage] = useState('');
+      const [activeTab, setActiveTab] = useState('tasks');
+      const [selectedAgent, setSelectedAgent] = useState(null);
+      const [showNewTask, setShowNewTask] = useState(false);
+      const [sessions, setSessions] = useState([
+        { id: 'main', agentId: 'henry', label: 'Main Session', lastMessage: 'Building Mission Control...', time: 'now' }
+      ]);
+      const [chatTab, setChatTab] = useState('warroom');
+      const [warRoom, setWarRoom] = useState(MOCK_WAR_ROOM);
+      const [newWarRoomMsg, setNewWarRoomMsg] = useState('');
+      const [taskInsights, setTaskInsights] = useState(MOCK_TASK_INSIGHTS);
+      const [currentProject, setCurrentProject] = useState('spendbase');
+      const [showMetrics, setShowMetrics] = useState(false);
+      const [showStandup, setShowStandup] = useState(false);
+      
+      // Calculate metrics
+      const metrics = {
+        totalTasks: tasks.length,
+        completed: tasks.filter(t => t.status === 'done').length,
+        inProgress: tasks.filter(t => t.status === 'in-progress').length,
+        avgCompletionTime: '2.4h',
+        agentStats: AGENTS.map(a => ({
+          ...a,
+          assigned: tasks.filter(t => t.agent === a.id && t.status !== 'done').length,
+          completed: tasks.filter(t => t.agent === a.id && t.status === 'done').length,
+        }))
+      };
+      
+      // Smart routing function
+      const smartRoute = (taskTitle, tags) => {
+        const text = (taskTitle + ' ' + tags.join(' ')).toLowerCase();
+        for (const [keyword, agentId] of Object.entries(ROUTING_RULES)) {
+          if (text.includes(keyword)) return agentId;
+        }
+        return null; // Stays in inbox for manual assignment
+      };
+      
+      // Generate daily standup
+      const generateStandup = () => {
+        const done = tasks.filter(t => t.status === 'done');
+        const inProgress = tasks.filter(t => t.status === 'in-progress');
+        const blocked = tasks.filter(t => t.tags?.includes('blocked'));
+        const inbox = tasks.filter(t => t.status === 'inbox');
+        
+        return {
+          date: currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
+          summary: {
+            done: done.length,
+            inProgress: inProgress.length,
+            blocked: blocked.length,
+            inbox: inbox.length,
+          },
+          highlights: done.slice(0, 3).map(t => t.title),
+          focus: inProgress.slice(0, 3).map(t => ({ title: t.title, agent: AGENTS.find(a => a.id === t.agent)?.name || 'Unassigned' })),
+          needsAttention: inbox.length > 5 ? `${inbox.length} tasks need assignment` : null,
+        };
+      };
+
+      useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+      }, []);
+
+      const handleSendMessage = (e) => {
+        e.preventDefault();
+        if (!newMessage.trim()) return;
+        setMessages([...messages, {
+          id: Date.now(),
+          from: 'chris',
+          text: newMessage,
+          time: currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+          isAnnouncement: newMessage.startsWith('/announce ')
+        }]);
+        setNewMessage('');
+      };
+      
+      const handleWarRoomMessage = (e) => {
+        e.preventDefault();
+        if (!newWarRoomMsg.trim()) return;
+        // Determine message type based on content
+        let type = 'reply';
+        if (newWarRoomMsg.toLowerCase().includes('alert') || newWarRoomMsg.includes('⚠️')) type = 'alert';
+        else if (newWarRoomMsg.toLowerCase().includes('insight') || newWarRoomMsg.toLowerCase().includes('suggest')) type = 'insight';
+        else if (newWarRoomMsg.toLowerCase().includes('scan') || newWarRoomMsg.includes('📋')) type = 'scan';
+        
+        setWarRoom([...warRoom, {
+          id: Date.now(),
+          from: 'henry', // Henry posts to war room
+          text: newWarRoomMsg,
+          time: currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+          type,
+          mentions: newWarRoomMsg.match(/@(\w+)/g)?.map(m => m.slice(1)) || []
+        }]);
+        setNewWarRoomMsg('');
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {/* Header */}
+          <header className="border-b border-dark-700 bg-dark-800/50 backdrop-blur-sm sticky top-0 z-50">
+            <div className="max-w-[1800px] mx-auto px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">◇</span>
+                    <span className="text-lg font-bold tracking-tight">Mission Control</span>
+                  </div>
+                  
+                  {/* Project Selector */}
+                  <div className="flex items-center gap-2">
+                    {PROJECTS.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => setCurrentProject(p.id)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition ${
+                          currentProject === p.id 
+                            ? `bg-${p.color}-500/20 text-${p.color}-400 border border-${p.color}-500/30` 
+                            : 'bg-dark-700 text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        <span>{p.emoji}</span>
+                        <span>{p.name}</span>
+                        {p.status === 'planned' && <span className="text-[9px] bg-dark-600 px-1 rounded">Soon</span>}
+                      </button>
+                    ))}
+                    <button className="px-2 py-1.5 text-gray-500 hover:text-gray-300 transition">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-6">
+                  {/* Quick Stats - Clickable */}
+                  <button onClick={() => setShowStandup(true)} className="text-center hover:bg-dark-700 px-3 py-1 rounded-lg transition">
+                    <div className="text-2xl font-bold text-white">{activeAgents.length}</div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Agents Active</div>
+                  </button>
+                  <button onClick={() => setShowMetrics(true)} className="text-center hover:bg-dark-700 px-3 py-1 rounded-lg transition">
+                    <div className="text-2xl font-bold text-white">{tasks.filter(t => t.status !== 'done').length}</div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Tasks in Queue</div>
+                  </button>
+                  <button onClick={() => setShowMetrics(true)} className="text-center hover:bg-dark-700 px-3 py-1 rounded-lg transition">
+                    <div className="text-2xl font-bold text-emerald-400">{metrics.completed}</div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider">Completed</div>
+                  </button>
+                  
+                  {/* Standup & Metrics Buttons */}
+                  <div className="flex items-center gap-2 border-l border-dark-700 pl-6">
+                    <button 
+                      onClick={() => setShowStandup(true)}
+                      className="px-3 py-1.5 bg-dark-700 text-gray-300 text-xs rounded-lg hover:bg-dark-600 transition flex items-center gap-2"
+                    >
+                      📋 Standup
+                    </button>
+                    <button 
+                      onClick={() => setShowMetrics(true)}
+                      className="px-3 py-1.5 bg-dark-700 text-gray-300 text-xs rounded-lg hover:bg-dark-600 transition flex items-center gap-2"
+                    >
+                      📊 Metrics
+                    </button>
+                  </div>
+                  
+                  <div className="text-right border-l border-dark-700 pl-6">
+                    <div className="text-xl font-mono text-white">
+                      {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                    </div>
+                    <div className="flex items-center gap-2 justify-end">
+                      <span className="w-2 h-2 bg-emerald-400 rounded-full status-dot"></span>
+                      <span className="text-[10px] text-emerald-400 uppercase tracking-wider">Online</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <main className="flex-1 max-w-[1800px] mx-auto w-full p-6">
+            <div className="grid grid-cols-12 gap-6 h-[calc(100vh-120px)]">
+              
+              {/* Left Sidebar - Agents */}
+              <div className="col-span-2 flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Agents</h2>
+                  <span className="text-xs text-gray-500">{AGENTS.length}</span>
+                </div>
+                <div className="space-y-2 overflow-y-auto scrollbar-thin flex-1">
+                  {AGENTS.map(agent => (
+                    <div key={agent.id} onClick={() => setSelectedAgent(agent)}>
+                      <AgentCard 
+                        agent={agent} 
+                        isActive={activeAgents.includes(agent.id)}
+                        isWorking={workingAgents.includes(agent.id)}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <button 
+                  onClick={() => {
+                    // Find first inactive agent to suggest
+                    const inactive = AGENTS.find(a => !activeAgents.includes(a.id));
+                    if (inactive) setSelectedAgent(inactive);
+                  }}
+                  className="mt-4 w-full py-2 border border-dashed border-dark-600 rounded-lg text-gray-500 text-sm hover:border-gray-500 hover:text-gray-400 transition"
+                >
+                  + Spawn Agent
+                </button>
+                
+                {/* Alpha Trading Panel */}
+                <div className="mt-4 p-3 bg-dark-800 rounded-xl border border-cyan-500/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span>📈</span>
+                    <span className="text-sm font-semibold text-cyan-400">Alpha Trading</span>
+                    <span className="ml-auto w-2 h-2 bg-cyan-400 rounded-full status-dot"></span>
+                  </div>
+                  
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="bg-dark-700 rounded-lg p-2">
+                      <div className="text-[10px] text-gray-500">SOL/USDC</div>
+                      <div className="text-sm font-bold text-white">$98.42</div>
+                      <div className="text-[10px] text-red-400">-4.2%</div>
+                    </div>
+                    <div className="bg-dark-700 rounded-lg p-2">
+                      <div className="text-[10px] text-gray-500">BTC/USDC</div>
+                      <div className="text-sm font-bold text-white">$61,240</div>
+                      <div className="text-[10px] text-red-400">-5.1%</div>
+                    </div>
+                  </div>
+                  
+                  {/* Wallet */}
+                  <div className="bg-dark-700 rounded-lg p-2 mb-3">
+                    <div className="text-[10px] text-gray-500 mb-1">Solflare Wallet</div>
+                    <div className="text-xs text-gray-400 font-mono truncate">nNHA98...DwPC</div>
+                    <div className="text-sm font-bold text-emerald-400 mt-1">$2,847.32</div>
+                  </div>
+                  
+                  {/* Active Alerts */}
+                  <div className="space-y-1">
+                    <div className="text-[10px] text-gray-500 uppercase">Active Alerts</div>
+                    <div className="flex items-center gap-2 text-xs bg-dark-700 rounded p-1.5">
+                      <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></span>
+                      <span className="text-gray-300">SOL &lt; $95 → Buy</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs bg-dark-700 rounded p-1.5">
+                      <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full"></span>
+                      <span className="text-gray-300">JUP yield &gt; 12%</span>
+                    </div>
+                  </div>
+                  
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <button className="py-1.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-lg hover:bg-emerald-500/30 transition">
+                      DCA Buy
+                    </button>
+                    <button className="py-1.5 bg-dark-600 text-gray-400 text-xs rounded-lg hover:bg-dark-500 transition">
+                      Set Alert
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Center - Task Board */}
+              <div className="col-span-7 flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Mission Queue</h2>
+                    <div className="flex gap-1">
+                      {['tasks', 'sessions'].map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => setActiveTab(tab)}
+                          className={`px-3 py-1 text-xs rounded-lg transition ${activeTab === tab ? 'bg-dark-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                          {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Scan indicator */}
+                    <div className="flex items-center gap-2 px-2 py-1 bg-dark-700 rounded-lg">
+                      <span className="w-2 h-2 bg-emerald-400 rounded-full status-dot"></span>
+                      <span className="text-[10px] text-gray-400">Council scans every 15m</span>
+                      <button 
+                        onClick={() => {
+                          // Simulate a board scan
+                          const scanMsg = {
+                            id: Date.now(),
+                            from: 'henry',
+                            text: `📋 Board scan complete. ${tasks.filter(t => t.status === 'inbox').length} tasks in inbox. Council reviewing...`,
+                            time: currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+                            type: 'scan'
+                          };
+                          setWarRoom([...warRoom, scanMsg]);
+                          setActivity([
+                            { id: Date.now(), type: 'scan', agent: 'henry', action: 'started', target: 'Board scan', time: 'just now' },
+                            ...activity
+                          ]);
+                        }}
+                        className="text-[10px] text-emerald-400 hover:text-emerald-300 transition"
+                      >
+                        Scan Now
+                      </button>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowNewTask(true)}
+                    className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-medium rounded-lg hover:bg-emerald-500/30 transition"
+                  >
+                    + New Task
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-x-auto scrollbar-thin">
+                  <div className="flex gap-4 h-full pb-4">
+                    {COLUMNS.map(col => (
+                      <TaskColumn key={col} status={col} tasks={tasks} insights={taskInsights} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Sidebar - Activity & Chat */}
+              <div className="col-span-3 flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Live Feed</h2>
+                  <span className="w-2 h-2 bg-red-400 rounded-full status-dot"></span>
+                </div>
+                
+                {/* Activity Feed */}
+                <div className="bg-dark-800 rounded-xl border border-dark-700 p-3 mb-4 max-h-[200px] overflow-y-auto scrollbar-thin">
+                  <div className="space-y-1">
+                    {activity.map(item => (
+                      <ActivityItem key={item.id} activity={item} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Chat with Tabs */}
+                <div className="flex-1 bg-dark-800 rounded-xl border border-dark-700 flex flex-col overflow-hidden">
+                  <div className="p-3 border-b border-dark-700">
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setChatTab('team')}
+                        className={`px-3 py-1 text-xs rounded-lg transition ${chatTab === 'team' ? 'bg-dark-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                      >
+                        Team Chat
+                      </button>
+                      <button 
+                        onClick={() => setChatTab('warroom')}
+                        className={`px-3 py-1 text-xs rounded-lg transition flex items-center gap-1 ${chatTab === 'warroom' ? 'bg-dark-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                      >
+                        🎯 War Room
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full status-dot"></span>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
+                    {chatTab === 'team' ? (
+                      messages.map(msg => <ChatMessage key={msg.id} message={msg} />)
+                    ) : (
+                      warRoom.map(msg => <WarRoomMessage key={msg.id} message={msg} />)
+                    )}
+                  </div>
+                  <form onSubmit={chatTab === 'team' ? handleSendMessage : handleWarRoomMessage} className="p-3 border-t border-dark-700">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={chatTab === 'team' ? newMessage : newWarRoomMsg}
+                        onChange={(e) => chatTab === 'team' ? setNewMessage(e.target.value) : setNewWarRoomMsg(e.target.value)}
+                        placeholder={chatTab === 'team' ? "Message or /announce..." : "@agent or insight..."}
+                        className="flex-1 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-500"
+                      />
+                      <button type="submit" className="px-4 py-2 bg-emerald-500 text-dark-900 font-medium text-sm rounded-lg hover:bg-emerald-400 transition">
+                        Send
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </main>
+          
+          {/* Agent Detail Modal */}
+          <Modal 
+            isOpen={selectedAgent !== null} 
+            onClose={() => setSelectedAgent(null)}
+            title={selectedAgent ? `${selectedAgent.emoji} ${selectedAgent.name}` : ''}
+          >
+            {selectedAgent && (
+              <AgentDetail 
+                agent={selectedAgent} 
+                sessions={sessions}
+                onSpawn={(agent) => {
+                  // Add to active agents
+                  if (!activeAgents.includes(agent.id)) {
+                    setActiveAgents([...activeAgents, agent.id]);
+                  }
+                  // Add activity
+                  setActivity([
+                    { id: Date.now(), type: 'spawn', agent: 'henry', action: 'spawned', target: agent.name, time: 'just now' },
+                    ...activity
+                  ]);
+                  // Add session
+                  setSessions([
+                    ...sessions,
+                    { id: `${agent.id}-${Date.now()}`, agentId: agent.id, label: `${agent.name} Session`, lastMessage: 'Ready for tasks...', time: 'now' }
+                  ]);
+                  setSelectedAgent(null);
+                }}
+                onClose={() => setSelectedAgent(null)}
+              />
+            )}
+          </Modal>
+          
+          {/* New Task Modal */}
+          <Modal 
+            isOpen={showNewTask} 
+            onClose={() => setShowNewTask(false)}
+            title="Create New Task"
+          >
+            <NewTaskModal 
+              onClose={() => setShowNewTask(false)}
+              onSubmit={(task) => {
+                // Smart routing
+                const autoAgent = smartRoute(task.title, task.tags);
+                if (autoAgent && !task.agent) {
+                  task.agent = autoAgent;
+                  task.status = 'assigned';
+                }
+                setTasks([task, ...tasks]);
+                setActivity([
+                  { id: Date.now(), type: 'task', agent: 'henry', action: 'created', target: task.title, time: 'just now' },
+                  ...activity
+                ]);
+                // Notify in war room if auto-assigned
+                if (autoAgent) {
+                  const assignedAgent = AGENTS.find(a => a.id === autoAgent);
+                  setWarRoom([...warRoom, {
+                    id: Date.now(),
+                    from: 'henry',
+                    text: `📋 Auto-assigned "${task.title}" to @${assignedAgent?.name} based on tags`,
+                    time: currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+                    type: 'update'
+                  }]);
+                }
+              }}
+              agents={AGENTS}
+            />
+          </Modal>
+          
+          {/* Metrics Modal */}
+          <Modal isOpen={showMetrics} onClose={() => setShowMetrics(false)} title="📊 Performance Metrics">
+            <div className="space-y-6">
+              {/* Overview Stats */}
+              <div className="grid grid-cols-4 gap-4">
+                <div className="bg-dark-700 rounded-xl p-4 text-center">
+                  <div className="text-3xl font-bold text-white">{metrics.totalTasks}</div>
+                  <div className="text-xs text-gray-500">Total Tasks</div>
+                </div>
+                <div className="bg-dark-700 rounded-xl p-4 text-center">
+                  <div className="text-3xl font-bold text-emerald-400">{metrics.completed}</div>
+                  <div className="text-xs text-gray-500">Completed</div>
+                </div>
+                <div className="bg-dark-700 rounded-xl p-4 text-center">
+                  <div className="text-3xl font-bold text-blue-400">{metrics.inProgress}</div>
+                  <div className="text-xs text-gray-500">In Progress</div>
+                </div>
+                <div className="bg-dark-700 rounded-xl p-4 text-center">
+                  <div className="text-3xl font-bold text-amber-400">{metrics.avgCompletionTime}</div>
+                  <div className="text-xs text-gray-500">Avg Time</div>
+                </div>
+              </div>
+              
+              {/* Agent Performance */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Agent Performance</h3>
+                <div className="space-y-2">
+                  {metrics.agentStats.map(agent => (
+                    <div key={agent.id} className="flex items-center gap-3 p-3 bg-dark-700 rounded-lg">
+                      <span className="text-xl">{agent.emoji}</span>
+                      <div className="flex-1">
+                        <div className="font-medium text-white">{agent.name}</div>
+                        <div className="text-xs text-gray-500">{agent.role}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm">
+                          <span className="text-emerald-400 font-bold">{agent.completed}</span>
+                          <span className="text-gray-500"> done</span>
+                        </div>
+                        <div className="text-xs text-gray-500">{agent.assigned} active</div>
+                      </div>
+                      {/* Mini progress bar */}
+                      <div className="w-20 h-2 bg-dark-600 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-emerald-500 rounded-full"
+                          style={{ width: `${agent.completed + agent.assigned > 0 ? (agent.completed / (agent.completed + agent.assigned)) * 100 : 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Completion Trend */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">This Week</h3>
+                <div className="flex items-end gap-1 h-20">
+                  {[3, 5, 2, 7, 4, 6, metrics.completed].map((v, i) => (
+                    <div key={i} className="flex-1 bg-emerald-500/20 rounded-t" style={{ height: `${(v / 7) * 100}%` }}>
+                      <div className="w-full bg-emerald-500 rounded-t" style={{ height: `${(v / 7) * 100}%` }}></div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between mt-1 text-[10px] text-gray-500">
+                  <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                </div>
+              </div>
+            </div>
+          </Modal>
+          
+          {/* Daily Standup Modal */}
+          <Modal isOpen={showStandup} onClose={() => setShowStandup(false)} title="📋 Daily Standup">
+            {(() => {
+              const standup = generateStandup();
+              return (
+                <div className="space-y-6">
+                  <div className="text-center pb-4 border-b border-dark-700">
+                    <div className="text-lg font-bold text-white">{standup.date}</div>
+                    <div className="text-sm text-gray-500">Morning Brief</div>
+                  </div>
+                  
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-emerald-400">{standup.summary.done}</div>
+                      <div className="text-[10px] text-emerald-400/70 uppercase">Done</div>
+                    </div>
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-blue-400">{standup.summary.inProgress}</div>
+                      <div className="text-[10px] text-blue-400/70 uppercase">In Progress</div>
+                    </div>
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-amber-400">{standup.summary.inbox}</div>
+                      <div className="text-[10px] text-amber-400/70 uppercase">Inbox</div>
+                    </div>
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-red-400">{standup.summary.blocked}</div>
+                      <div className="text-[10px] text-red-400/70 uppercase">Blocked</div>
+                    </div>
+                  </div>
+                  
+                  {/* Highlights */}
+                  {standup.highlights.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">✅ Completed</h3>
+                      <div className="space-y-1">
+                        {standup.highlights.map((h, i) => (
+                          <div key={i} className="flex items-center gap-2 text-sm text-gray-300">
+                            <span className="text-emerald-400">•</span> {h}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Focus Today */}
+                  {standup.focus.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">🎯 Focus Today</h3>
+                      <div className="space-y-2">
+                        {standup.focus.map((f, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 bg-dark-700 rounded-lg">
+                            <span className="text-sm text-white">{f.title}</span>
+                            <span className="text-xs text-gray-500">{f.agent}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Needs Attention */}
+                  {standup.needsAttention && (
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                      <div className="flex items-center gap-2 text-amber-400">
+                        <span>⚠️</span>
+                        <span className="text-sm">{standup.needsAttention}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-2">
+                    <button 
+                      onClick={() => {
+                        // Send standup to Telegram
+                        setShowStandup(false);
+                      }}
+                      className="flex-1 py-2 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600 transition text-sm"
+                    >
+                      📱 Send to Telegram
+                    </button>
+                    <button 
+                      onClick={() => setShowStandup(false)}
+                      className="flex-1 py-2 bg-emerald-500 text-dark-900 font-medium rounded-lg hover:bg-emerald-400 transition text-sm"
+                    >
+                      Start Day
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </Modal>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('app'));
+  </script>
+  
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</body>
+</html>
