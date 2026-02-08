@@ -37,9 +37,10 @@
 
     // Projects/Businesses - CUSTOMIZE THESE
     const PROJECTS = [
-      { id: 'project-alpha', name: 'Project Alpha', emoji: '🚀', color: 'emerald', status: 'active' },
-      { id: 'project-beta', name: 'Project Beta', emoji: '💎', color: 'blue', status: 'active' },
-      { id: 'project-gamma', name: 'Project Gamma', emoji: '⚡', color: 'purple', status: 'planned' },
+      { id: 'spendbase', name: 'Spendbase', emoji: '💳', color: 'emerald', status: 'active' },
+      { id: 'linkswarm', name: 'LinkSwarm', emoji: '🐝', color: 'amber', status: 'active' },
+      { id: 'onchainbanks', name: 'OnchainBanks', emoji: '🏦', color: 'blue', status: 'planned' },
+      { id: 'usdckey', name: 'USDCkey', emoji: '🔑', color: 'purple', status: 'planned' },
     ];
     
     // Smart routing rules - customize keywords for your projects
@@ -68,38 +69,71 @@
     const COLUMN_LABELS = { 'inbox': 'Inbox', 'assigned': 'Assigned', 'in-progress': 'In Progress', 'review': 'Review', 'done': 'Done' };
     const COLUMN_COLORS = { 'inbox': 'gray', 'assigned': 'yellow', 'in-progress': 'blue', 'review': 'purple', 'done': 'emerald' };
 
-    // Task data - EXAMPLE DATA (customize for your projects)
+    // Task data - Real projects: Spendbase & LinkSwarm
     const MOCK_TASKS = [
+      // ===== SPENDBASE TASKS =====
       // DONE
-      { id: 1, title: 'Set up project repository', status: 'done', agent: 'henry', priority: 'high', tags: ['dev', 'setup'] },
-      { id: 2, title: 'Design landing page mockup', status: 'done', agent: 'forge', priority: 'high', tags: ['design', 'dev'] },
-      { id: 3, title: 'Write launch announcement', status: 'done', agent: 'pulse', priority: 'medium', tags: ['social', 'content'] },
+      { id: 's1', title: '[Spendbase] Launch 107 card pages', status: 'done', agent: 'forge', priority: 'high', tags: ['dev'], project: 'spendbase' },
+      { id: 's2', title: '[Spendbase] KAST cards consolidated to 4 tiers', status: 'done', agent: 'forge', priority: 'high', tags: ['dev'], project: 'spendbase' },
+      { id: 's3', title: '[Spendbase] Set up Google Analytics', status: 'done', agent: 'henry', priority: 'medium', tags: ['setup'], project: 'spendbase' },
+      { id: 's4', title: '[Spendbase] Create OG images for all cards', status: 'done', agent: 'forge', priority: 'medium', tags: ['design'], project: 'spendbase' },
+      // IN PROGRESS
+      { id: 's5', title: '[Spendbase] SEO optimization for card pages', status: 'in-progress', agent: 'index', priority: 'high', tags: ['seo'], project: 'spendbase' },
+      { id: 's6', title: '[Spendbase] Provider outreach for sponsorships', status: 'in-progress', agent: 'bridge', priority: 'high', tags: ['outreach'], project: 'spendbase' },
+      // INBOX
+      { id: 's7', title: '[Spendbase] Product Hunt launch', status: 'inbox', agent: null, priority: 'high', tags: ['launch'], project: 'spendbase' },
+      { id: 's8', title: '[Spendbase] Create comparison tool', status: 'inbox', agent: null, priority: 'medium', tags: ['dev'], project: 'spendbase' },
+
+      // ===== LINKSWARM TASKS =====
+      // DONE
+      { id: 'l1', title: '[LinkSwarm] API MVP deployed', status: 'done', agent: 'forge', priority: 'high', tags: ['dev', 'api'], project: 'linkswarm' },
+      { id: 'l2', title: '[LinkSwarm] Dashboard with verify flow', status: 'done', agent: 'forge', priority: 'high', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l3', title: '[LinkSwarm] Discover partners UI', status: 'done', agent: 'forge', priority: 'high', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l4', title: '[LinkSwarm] Site analysis with SEO stats', status: 'done', agent: 'forge', priority: 'medium', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l5', title: '[LinkSwarm] Accept/Reject exchange flow', status: 'done', agent: 'forge', priority: 'high', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l6', title: '[LinkSwarm] DNS/SSL issues fixed', status: 'done', agent: 'forge', priority: 'high', tags: ['devops'], project: 'linkswarm' },
+      { id: 'l7', title: '[LinkSwarm] Remove AI bot blocks (Cloudflare)', status: 'done', agent: 'henry', priority: 'high', tags: ['devops'], project: 'linkswarm' },
       
       // IN PROGRESS
-      { id: 4, title: 'Build MVP features', status: 'in-progress', agent: 'forge', priority: 'high', tags: ['dev'] },
-      { id: 5, title: 'Create social media accounts', status: 'in-progress', agent: 'pulse', priority: 'medium', tags: ['social'] },
-      { id: 6, title: 'Keyword research', status: 'in-progress', agent: 'index', priority: 'medium', tags: ['seo'] },
+      { id: 'l8', title: '[LinkSwarm] Generate Link Copy feature', status: 'in-progress', agent: 'forge', priority: 'high', tags: ['dev', 'ai'], project: 'linkswarm' },
       
       // ASSIGNED
-      { id: 7, title: 'Reach out to potential partners', status: 'assigned', agent: 'bridge', priority: 'high', tags: ['outreach'] },
-      { id: 8, title: 'Create demo video', status: 'assigned', agent: 'reel', priority: 'medium', tags: ['video'] },
-      { id: 9, title: 'Set up trading alerts', status: 'assigned', agent: 'alpha', priority: 'low', tags: ['trading'] },
+      { id: 'l9', title: '[LinkSwarm] Build Promote section (launch distribution)', status: 'assigned', agent: 'forge', priority: 'high', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l10', title: '[LinkSwarm] Build Press section (PR automation)', status: 'assigned', agent: 'forge', priority: 'medium', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l11', title: '[LinkSwarm] X/Twitter presence (@Link_Swarm)', status: 'assigned', agent: 'pulse', priority: 'medium', tags: ['social'], project: 'linkswarm' },
       
-      // INBOX (unassigned)
-      { id: 10, title: 'Write blog post about launch', status: 'inbox', agent: null, priority: 'medium', tags: ['content', 'seo'] },
-      { id: 11, title: 'Set up payment processing', status: 'inbox', agent: null, priority: 'high', tags: ['dev', 'payments'] },
-      { id: 12, title: 'Create email templates', status: 'inbox', agent: null, priority: 'low', tags: ['outreach', 'email'] },
-      { id: 13, title: 'Schedule Product Hunt launch', status: 'inbox', agent: null, priority: 'medium', tags: ['launch'] },
-      { id: 14, title: 'Build backlink strategy', status: 'inbox', agent: null, priority: 'medium', tags: ['seo', 'backlink'] },
+      // INBOX - NETWORK
+      { id: 'l12', title: '[LinkSwarm] Credit system backend', status: 'inbox', agent: null, priority: 'high', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l13', title: '[LinkSwarm] Automated link verification (crawler)', status: 'inbox', agent: null, priority: 'high', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l14', title: '[LinkSwarm] Reputation scoring algorithm', status: 'inbox', agent: null, priority: 'medium', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l15', title: '[LinkSwarm] Email notifications for matches', status: 'inbox', agent: null, priority: 'medium', tags: ['dev'], project: 'linkswarm' },
+      
+      // INBOX - PROMOTE
+      { id: 'l16', title: '[LinkSwarm] Project intake form', status: 'inbox', agent: null, priority: 'high', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l17', title: '[LinkSwarm] Product Hunt API integration', status: 'inbox', agent: null, priority: 'medium', tags: ['dev', 'api'], project: 'linkswarm' },
+      { id: 'l18', title: '[LinkSwarm] Crunchbase API integration', status: 'inbox', agent: null, priority: 'medium', tags: ['dev', 'api'], project: 'linkswarm' },
+      { id: 'l19', title: '[LinkSwarm] BetaList submission automation', status: 'inbox', agent: null, priority: 'medium', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l20', title: '[LinkSwarm] Platform submission status dashboard', status: 'inbox', agent: null, priority: 'medium', tags: ['dev'], project: 'linkswarm' },
+      
+      // INBOX - PRESS
+      { id: 'l21', title: '[LinkSwarm] Journalist database integration', status: 'inbox', agent: null, priority: 'medium', tags: ['dev'], project: 'linkswarm' },
+      { id: 'l22', title: '[LinkSwarm] AI pitch generator', status: 'inbox', agent: null, priority: 'medium', tags: ['dev', 'ai'], project: 'linkswarm' },
+      { id: 'l23', title: '[LinkSwarm] Email sequence automation', status: 'inbox', agent: null, priority: 'low', tags: ['dev'], project: 'linkswarm' },
+      
+      // INBOX - GROWTH
+      { id: 'l24', title: '[LinkSwarm] Submit to Google Search Console', status: 'inbox', agent: null, priority: 'high', tags: ['seo'], project: 'linkswarm' },
+      { id: 'l25', title: '[LinkSwarm] Backlink from Spendbase blog', status: 'inbox', agent: null, priority: 'medium', tags: ['seo'], project: 'linkswarm' },
+      { id: 'l26', title: '[LinkSwarm] Show HN launch post', status: 'inbox', agent: null, priority: 'medium', tags: ['launch'], project: 'linkswarm' },
+      { id: 'l27', title: '[LinkSwarm] Test with Spendbase as first customer', status: 'inbox', agent: null, priority: 'high', tags: ['testing'], project: 'linkswarm' },
     ];
 
     const MOCK_ACTIVITY = [
-      { id: 1, type: 'task', agent: 'henry', action: 'completed', target: 'Project setup and configuration', time: 'just now' },
-      { id: 2, type: 'task', agent: 'forge', action: 'completed', target: 'Landing page deployed', time: '10 min ago' },
-      { id: 3, type: 'task', agent: 'pulse', action: 'completed', target: 'Twitter account created', time: '30 min ago' },
-      { id: 4, type: 'task', agent: 'index', action: 'started', target: 'Keyword research', time: '45 min ago' },
-      { id: 5, type: 'task', agent: 'bridge', action: 'started', target: 'Partner outreach list', time: '1 hr ago' },
-      { id: 6, type: 'alert', agent: 'alpha', action: 'detected', target: 'Market opportunity identified', time: '2 hr ago' },
+      { id: 1, type: 'task', agent: 'forge', action: 'completed', target: '[LinkSwarm] Accept/Reject exchange flow', time: 'just now' },
+      { id: 2, type: 'task', agent: 'forge', action: 'completed', target: '[LinkSwarm] Discover partners UI', time: '30 min ago' },
+      { id: 3, type: 'task', agent: 'henry', action: 'completed', target: '[LinkSwarm] Fix DNS/SSL issues', time: '1 hr ago' },
+      { id: 4, type: 'task', agent: 'forge', action: 'completed', target: '[Spendbase] KAST cards consolidated', time: '2 hr ago' },
+      { id: 5, type: 'task', agent: 'forge', action: 'started', target: '[LinkSwarm] Generate Link Copy feature', time: '3 hr ago' },
+      { id: 6, type: 'alert', agent: 'henry', action: 'detected', target: 'LinkSwarm vision expanded: Network + Promote + Press', time: '4 hr ago' },
     ];
 
     const MOCK_MESSAGES = [
@@ -113,11 +147,11 @@
     
     // Agent War Room - inter-agent chat (example conversations)
     const MOCK_WAR_ROOM = [
-      { id: 1, from: 'henry', text: '📋 Board scan complete. 3 tasks in inbox need assignment.', time: '09:00', type: 'scan' },
-      { id: 2, from: 'index', text: '@pulse The blog post could use keyword optimization before publishing. I can provide target keywords.', time: '09:15', type: 'insight', mentions: ['pulse'] },
-      { id: 3, from: 'pulse', text: '@index Good call. Send me top 10 keywords, I\'ll work them into socials too.', time: '09:20', type: 'reply', mentions: ['index'] },
-      { id: 4, from: 'alpha', text: '⚠️ Market alert: Good entry point identified. Watching for confirmation.', time: '10:00', type: 'alert' },
-      { id: 5, from: 'forge', text: '@henry Landing page deployed. Ready for review.', time: '11:30', type: 'update', mentions: ['henry'] },
+      { id: 1, from: 'henry', text: '📋 LinkSwarm vision locked: Network (backlinks) + Promote (distribution) + Press (PR automation). All-in-one AI launch platform.', time: '18:30', type: 'announcement' },
+      { id: 2, from: 'forge', text: '@henry Dashboard updated with Discover Partners, Analyze popup, Accept/Reject flow. What\'s next priority?', time: '18:35', type: 'update', mentions: ['henry'] },
+      { id: 3, from: 'henry', text: '@forge Generate Link Copy feature - that\'s the magic. Then Promote section.', time: '18:37', type: 'reply', mentions: ['forge'] },
+      { id: 4, from: 'index', text: '@pulse LinkSwarm needs Google indexing ASAP. Also @Link_Swarm Twitter is dormant.', time: '18:40', type: 'insight', mentions: ['pulse'] },
+      { id: 5, from: 'pulse', text: '@index On it. Will activate Twitter and create launch content.', time: '18:42', type: 'reply', mentions: ['index'] },
       { id: 6, from: 'henry', text: '✅ @forge Looks great. Merging to main.', time: '11:35', type: 'reply', mentions: ['forge'] },
       { id: 7, from: 'bridge', text: 'Insight: Found 3 potential partners on Twitter. Adding to outreach queue.', time: '14:00', type: 'insight' },
       { id: 8, from: 'reel', text: 'Demo video draft ready. 2 min runtime. @henry review when you can.', time: '16:00', type: 'update', mentions: ['henry'] },
